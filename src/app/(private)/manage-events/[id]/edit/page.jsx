@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
+import { toast } from "react-toastify";
 import { authClient } from "@/lib/auth-client";
 
 export default function EditEventPage() {
@@ -18,14 +19,18 @@ export default function EditEventPage() {
   const today = new Date().toLocaleDateString("en-CA");
 
   useEffect(() => {
-    if (isPending) return;
+    if (isPending || !id) return;
 
     if (!session?.user) {
       setLoading(false);
       return;
     }
 
+    let cancelled = false;
+
     async function loadEvent() {
+      setLoading(true);
+
       try {
         const response = await fetch(
           `https://together-for-good-server.onrender.com/events/${id}`
@@ -36,6 +41,8 @@ export default function EditEventPage() {
         }
 
         const event = await response.json();
+
+        if (cancelled) return;
 
         if (event.creatorEmail !== session.user.email) {
           setError("You can only edit your own events.");
@@ -51,36 +58,44 @@ export default function EditEventPage() {
           eventDate: event.eventDate || "",
         });
       } catch {
-        setError("Unable to load event.");
+        if (!cancelled) {
+          setError("Unable to load event.");
+        }
       } finally {
-        setLoading(false);
+        if (!cancelled) {
+          setLoading(false);
+        }
       }
     }
 
     loadEvent();
+
+    return () => {
+      cancelled = true;
+    };
   }, [id, session?.user?.email, isPending]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setError("");
 
     if (!form || !session?.user) {
-      setError("Please login first.");
+      toast.error("Please login first.");
       return;
     }
 
     if (form.eventDate <= today) {
-      setError("Please select a future date.");
+      toast.warning("Please select a future date.");
       return;
     }
 
     setSaving(true);
 
     try {
-      const { data, error: tokenError } = await authClient.token();
+      const { data, error: tokenError } =
+        await authClient.token();
 
       if (tokenError || !data?.token) {
-        throw new Error("Unable to get authentication token");
+        throw new Error("Unable to get authentication token.");
       }
 
       const response = await fetch(
@@ -97,13 +112,20 @@ export default function EditEventPage() {
 
       if (!response.ok) {
         const result = await response.json().catch(() => ({}));
-        throw new Error(result.message || "Failed to update event");
+
+        throw new Error(
+          result.message || "Failed to update event."
+        );
       }
+
+      toast.success("Event updated successfully!");
 
       router.push("/manage-events");
       router.refresh();
     } catch (err) {
-      setError(err.message || "Failed to update event.");
+      toast.error(
+        err.message || "Failed to update event. Please try again."
+      );
     } finally {
       setSaving(false);
     }
@@ -140,7 +162,7 @@ export default function EditEventPage() {
 
   if (!form) {
     return (
-      <main className="min-h-screen bg-emerald-50/40 py-20 text-center text-red-600 dark:bg-slate-900 dark:text-red-400">
+      <main className="min-h-screen bg-emerald-50/40 px-4 py-20 text-center text-red-600 dark:bg-slate-900 dark:text-red-400">
         {error || "Event not found."}
       </main>
     );
@@ -155,14 +177,37 @@ export default function EditEventPage() {
 
         <form onSubmit={handleSubmit} className="mt-8 space-y-5">
           {[
-            { name: "title", label: "Event Title", type: "text" },
-            { name: "description", label: "Description", type: "textarea" },
-            { name: "image", label: "Thumbnail URL", type: "url" },
-            { name: "location", label: "Location", type: "text" },
-            { name: "eventDate", label: "Event Date", type: "date" },
+            {
+              name: "title",
+              label: "Event Title",
+              type: "text",
+            },
+            {
+              name: "description",
+              label: "Description",
+              type: "textarea",
+            },
+            {
+              name: "image",
+              label: "Thumbnail URL",
+              type: "url",
+            },
+            {
+              name: "location",
+              label: "Location",
+              type: "text",
+            },
+            {
+              name: "eventDate",
+              label: "Event Date",
+              type: "date",
+            },
           ].map((field) => (
             <div key={field.name}>
-              <label htmlFor={field.name} className={labelClass}>
+              <label
+                htmlFor={field.name}
+                className={labelClass}
+              >
                 {field.label}
               </label>
 
@@ -185,7 +230,11 @@ export default function EditEventPage() {
                   id={field.name}
                   type={field.type}
                   required
-                  min={field.type === "date" ? today : undefined}
+                  min={
+                    field.type === "date"
+                      ? today
+                      : undefined
+                  }
                   value={form[field.name]}
                   onChange={(e) =>
                     setForm({
@@ -193,7 +242,9 @@ export default function EditEventPage() {
                       [field.name]: e.target.value,
                     })
                   }
-                  className={`${inputClass} ${field.type === "date" ? "dark:[color-scheme:dark]" : ""
+                  className={`${inputClass} ${field.type === "date"
+                      ? "dark:[color-scheme:dark]"
+                      : ""
                     }`}
                 />
               )}
@@ -201,7 +252,10 @@ export default function EditEventPage() {
           ))}
 
           <div>
-            <label htmlFor="eventType" className={labelClass}>
+            <label
+              htmlFor="eventType"
+              className={labelClass}
+            >
               Event Type
             </label>
 
@@ -223,15 +277,6 @@ export default function EditEventPage() {
               <option value="Other">Other</option>
             </select>
           </div>
-
-          {error && (
-            <p
-              role="alert"
-              className="text-sm text-red-600 dark:text-red-400"
-            >
-              {error}
-            </p>
-          )}
 
           <button
             type="submit"

@@ -3,6 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
+import { toast } from "react-toastify";
 import { usePathname, useRouter } from "next/navigation";
 import {
   ArrowUpRight,
@@ -88,21 +89,23 @@ export default function Navbar() {
       const { error } = await authClient.signOut();
 
       if (error) {
-        console.error("Logout failed:", error.message);
+        toast.error(error.message || "Logout failed.");
         return;
       }
 
       setProfileOpen(false);
       setMenuOpen(false);
+
+      toast.success("Logged out successfully!");
+
       router.push("/");
       router.refresh();
     } catch (error) {
-      console.error("Logout failed:", error);
+      toast.error(error.message || "Logout failed. Please try again.");
     } finally {
       setLoggingOut(false);
     }
   };
-
   const avatar = (
     <div className="flex size-10 shrink-0 items-center justify-center overflow-hidden rounded-full border-2 border-emerald-100 bg-emerald-50">
       {user?.image ? (

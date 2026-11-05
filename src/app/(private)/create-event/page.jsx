@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import { toast } from "react-toastify";
 import { authClient } from "@/lib/auth-client";
 
 export default function CreateEventPage() {
@@ -19,32 +20,37 @@ export default function CreateEventPage() {
   });
 
   const [loading, setLoading] = useState(false);
-  const [message, setMessage] = useState("");
 
   const today = new Date().toLocaleDateString("en-CA");
 
   const handleChange = (e) => {
-    setForm({ ...form, [e.target.name]: e.target.value });
+    setForm((prev) => ({
+      ...prev,
+      [e.target.name]: e.target.value,
+    }));
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setMessage("");
 
-    if (!session?.user) return;
+    if (!session?.user) {
+      toast.error("Please login first.");
+      return;
+    }
 
     if (form.eventDate <= today) {
-      setMessage("Please select a future date.");
+      toast.warning("Please select a future date.");
       return;
     }
 
     setLoading(true);
 
     try {
-      const { data, error: tokenError } = await authClient.token();
+      const { data, error: tokenError } =
+        await authClient.token();
 
       if (tokenError || !data?.token) {
-        throw new Error("Unable to get authentication token");
+        throw new Error("Unable to get authentication token.");
       }
 
       const response = await fetch(
@@ -63,13 +69,20 @@ export default function CreateEventPage() {
       );
 
       if (!response.ok) {
-        throw new Error("Failed to create event");
+        const result = await response.json().catch(() => ({}));
+        throw new Error(
+          result.message || "Failed to create event."
+        );
       }
+
+      toast.success("Event created successfully!");
 
       router.push("/events");
       router.refresh();
-    } catch {
-      setMessage("Failed to create event. Please try again.");
+    } catch (err) {
+      toast.error(
+        err.message || "Failed to create event. Please try again."
+      );
     } finally {
       setLoading(false);
     }
@@ -230,15 +243,6 @@ export default function CreateEventPage() {
               className="w-full rounded-xl border border-slate-200 bg-slate-100 px-4 py-3 text-slate-500 dark:border-slate-600 dark:bg-slate-700 dark:text-slate-300"
             />
           </div>
-
-          {message && (
-            <p
-              role="alert"
-              className="text-sm text-red-600 dark:text-red-400"
-            >
-              {message}
-            </p>
-          )}
 
           <button
             type="submit"

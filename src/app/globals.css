@@ -121,10 +121,36 @@
   * {
     @apply border-border outline-ring/50;
   }
+
   body {
     @apply bg-background text-foreground;
   }
+
   html {
     @apply font-sans;
   }
+}
+
+.Toastify__toast--success {
+  background: #059669 !important;
+  color: #ffffff !important;
+}
+
+.Toastify__toast--error {
+  background: #be123c !important;
+  color: #ffffff !important;
+}
+
+.Toastify__toast--warning {
+  background: #d97706 !important;
+  color: #ffffff !important;
+}
+
+.Toastify__toast--info {
+  background: #2563eb !important;
+  color: #ffffff !important;
+}
+
+.Toastify__progress-bar--success {
+  background: #a7f3d0 !important;
 }

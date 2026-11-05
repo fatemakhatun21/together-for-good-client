@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
+import { toast } from "react-toastify";
 import {
     ArrowLeft,
     CalendarDays,
@@ -86,7 +87,7 @@ export default function EventDetailsPage() {
                     await authClient.token();
 
                 if (tokenError || !data?.token) {
-                    throw new Error("Authentication token unavailable");
+                    throw new Error("Authentication token unavailable.");
                 }
 
                 const response = await fetch(
@@ -99,7 +100,7 @@ export default function EventDetailsPage() {
                 );
 
                 if (!response.ok) {
-                    throw new Error("Failed to check join status");
+                    throw new Error("Failed to check join status.");
                 }
 
                 const result = await response.json();
@@ -141,6 +142,8 @@ export default function EventDetailsPage() {
         setJoinError(false);
 
         if (!session?.user) {
+            toast.info("Please login to join this event.");
+
             const callbackUrl = `/events/${id}`;
 
             router.push(
@@ -174,7 +177,7 @@ export default function EventDetailsPage() {
 
             if (response.status === 409) {
                 setJoined(true);
-                setJoinMessage("You have already joined this event.");
+                toast.info("You have already joined this event.");
                 return;
             }
 
@@ -183,11 +186,16 @@ export default function EventDetailsPage() {
             }
 
             setJoined(true);
-            setJoinMessage("You have successfully joined this event!");
+
+            toast.success("You have successfully joined this event!");
         } catch (err) {
             setJoinError(true);
             setJoinMessage(
                 err.message || "Something went wrong. Please try again."
+            );
+
+            toast.error(
+                err.message || "Failed to join event. Please try again."
             );
         } finally {
             setJoining(false);
@@ -292,7 +300,7 @@ export default function EventDetailsPage() {
                                 checkingJoin ||
                                 joinError
                             }
-                            className="mt-10 inline-flex items-center gap-2 rounded-xl bg-emerald-600 px-7 py-3 font-semibold text-white transition-colors hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-60 dark:bg-emerald-600 dark:hover:bg-emerald-500"
+                            className="mt-10 inline-flex items-center gap-2 rounded-xl bg-emerald-600 px-7 py-3 font-semibold text-white transition-colors hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-60 dark:hover:bg-emerald-500"
                         >
                             <HeartHandshake className="size-5" />
 

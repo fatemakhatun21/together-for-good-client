@@ -3,6 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { toast } from "react-toastify";
 import { authClient } from "@/lib/auth-client";
 
 export default function RegisterPage() {
@@ -15,7 +16,6 @@ export default function RegisterPage() {
     password: "",
   });
 
-  const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
   const handleChange = (e) => {
@@ -27,12 +27,11 @@ export default function RegisterPage() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setError("");
 
     const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z]).{6,}$/;
 
     if (!passwordRegex.test(form.password)) {
-      setError(
+      toast.warning(
         "Password must contain uppercase, lowercase and at least 6 characters."
       );
       return;
@@ -41,42 +40,49 @@ export default function RegisterPage() {
     setLoading(true);
 
     try {
-      const { error: signupError } = await authClient.signUp.email({
-        name: form.name,
-        email: form.email,
-        password: form.password,
-        image: form.image || undefined,
-      });
+      const { error: signupError } =
+        await authClient.signUp.email({
+          name: form.name,
+          email: form.email,
+          password: form.password,
+          image: form.image || undefined,
+        });
 
       if (signupError) {
-        setError(signupError.message || "Registration failed.");
+        toast.error(
+          signupError.message || "Registration failed."
+        );
         return;
       }
+
+      toast.success("Account created successfully!");
 
       router.push("/");
       router.refresh();
     } catch {
-      setError("Something went wrong. Please try again.");
+      toast.error("Something went wrong. Please try again.");
     } finally {
       setLoading(false);
     }
   };
 
   const handleGoogleLogin = async () => {
-    setError("");
     setLoading(true);
 
     try {
-      const { error: googleError } = await authClient.signIn.social({
-        provider: "google",
-        callbackURL: "/",
-      });
+      const { error: googleError } =
+        await authClient.signIn.social({
+          provider: "google",
+          callbackURL: "/",
+        });
 
       if (googleError) {
-        setError(googleError.message || "Google registration failed.");
+        toast.error(
+          googleError.message || "Google registration failed."
+        );
       }
     } catch {
-      setError("Google registration failed. Please try again.");
+      toast.error("Google registration failed. Please try again.");
     } finally {
       setLoading(false);
     }
@@ -98,10 +104,26 @@ export default function RegisterPage() {
 
         <form onSubmit={handleSubmit} className="mt-8 space-y-5">
           {[
-            { name: "name", label: "Full Name", type: "text" },
-            { name: "email", label: "Email", type: "email" },
-            { name: "image", label: "Photo URL (Optional)", type: "url" },
-            { name: "password", label: "Password", type: "password" },
+            {
+              name: "name",
+              label: "Full Name",
+              type: "text",
+            },
+            {
+              name: "email",
+              label: "Email",
+              type: "email",
+            },
+            {
+              name: "image",
+              label: "Photo URL (Optional)",
+              type: "url",
+            },
+            {
+              name: "password",
+              label: "Password",
+              type: "password",
+            },
           ].map((field) => (
             <div key={field.name}>
               <label
@@ -118,7 +140,9 @@ export default function RegisterPage() {
                 value={form[field.name]}
                 onChange={handleChange}
                 required={field.name !== "image"}
-                minLength={field.name === "password" ? 6 : undefined}
+                minLength={
+                  field.name === "password" ? 6 : undefined
+                }
                 autoComplete={
                   field.name === "name"
                     ? "name"
@@ -132,15 +156,6 @@ export default function RegisterPage() {
               />
             </div>
           ))}
-
-          {error && (
-            <p
-              role="alert"
-              className="text-sm text-red-600 dark:text-red-400"
-            >
-              {error}
-            </p>
-          )}
 
           <button
             type="submit"

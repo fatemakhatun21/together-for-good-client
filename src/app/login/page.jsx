@@ -3,11 +3,15 @@
 import { Suspense, useState } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
+import { toast } from "react-toastify";
 import { authClient } from "@/lib/auth-client";
+
 function LoginForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
+
   const callbackUrl = searchParams.get("callbackUrl");
+
   const redirectTo =
     callbackUrl?.startsWith("/") &&
       !callbackUrl.startsWith("//") &&
@@ -20,7 +24,6 @@ function LoginForm() {
     password: "",
   });
 
-  const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
   const inputClass =
@@ -31,7 +34,6 @@ function LoginForm() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setError("");
     setLoading(true);
 
     try {
@@ -41,21 +43,22 @@ function LoginForm() {
       });
 
       if (loginError) {
-        setError(loginError.message || "Login failed.");
+        toast.error(loginError.message || "Login failed.");
         return;
       }
+
+      toast.success("Login successful!");
 
       router.replace(redirectTo);
       router.refresh();
     } catch {
-      setError("Something went wrong. Please try again.");
+      toast.error("Something went wrong. Please try again.");
     } finally {
       setLoading(false);
     }
   };
 
   const handleGoogleLogin = async () => {
-    setError("");
     setLoading(true);
 
     try {
@@ -65,10 +68,10 @@ function LoginForm() {
       });
 
       if (googleError) {
-        setError(googleError.message || "Google login failed.");
+        toast.error(googleError.message || "Google login failed.");
       }
     } catch {
-      setError("Google login failed. Please try again.");
+      toast.error("Google login failed. Please try again.");
     } finally {
       setLoading(false);
     }
@@ -124,15 +127,6 @@ function LoginForm() {
             />
           </div>
 
-          {error && (
-            <p
-              role="alert"
-              className="text-sm text-red-600 dark:text-red-400"
-            >
-              {error}
-            </p>
-          )}
-
           <button
             type="submit"
             disabled={loading}
@@ -144,7 +138,7 @@ function LoginForm() {
 
         <div className="my-6 flex items-center gap-3">
           <div className="h-px flex-1 bg-slate-200 dark:bg-slate-600" />
-          <span className="text-sm text-slate-400 dark:text-slate-400">
+          <span className="text-sm text-slate-400">
             OR
           </span>
           <div className="h-px flex-1 bg-slate-200 dark:bg-slate-600" />

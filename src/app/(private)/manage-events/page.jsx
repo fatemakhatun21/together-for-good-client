@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import { toast } from "react-toastify";
 import {
   CalendarDays,
   MapPin,
@@ -11,6 +12,8 @@ import {
   AlertTriangle,
 } from "lucide-react";
 import { authClient } from "@/lib/auth-client";
+
+const API_URL = "https://together-for-good-server.onrender.com";
 
 export default function ManageEventsPage() {
   const { data: session, isPending } = authClient.useSession();
@@ -29,7 +32,11 @@ export default function ManageEventsPage() {
       return;
     }
 
+    let cancelled = false;
+
     async function fetchEvents() {
+      setLoading(true);
+
       try {
         const { data: tokenData, error: tokenError } =
           await authClient.token();
@@ -38,35 +45,44 @@ export default function ManageEventsPage() {
           throw new Error("Authentication token unavailable");
         }
 
-        const response = await fetch(
-          "https://together-for-good-server.onrender.com/my-events",
-          {
-            headers: {
-              Authorization: `Bearer ${tokenData.token}`,
-            },
-          }
-        );
+        const response = await fetch(`${API_URL}/my-events`, {
+          headers: {
+            Authorization: `Bearer ${tokenData.token}`,
+          },
+        });
 
         if (!response.ok) {
           throw new Error("Failed to load events");
         }
 
         const data = await response.json();
-        setEvents(data);
+
+        if (!cancelled) {
+          setEvents(data);
+        }
       } catch {
-        setError("Unable to load your events.");
+        if (!cancelled) {
+          setError("Unable to load your events.");
+        }
       } finally {
-        setLoading(false);
+        if (!cancelled) {
+          setLoading(false);
+        }
       }
     }
 
     fetchEvents();
+
+    return () => {
+      cancelled = true;
+    };
   }, [session?.user?.email, isPending]);
 
   const handleDelete = async () => {
     if (!selectedEvent || deletingId) return;
 
     const id = selectedEvent._id;
+
     setDeletingId(id);
     setError("");
 
@@ -78,19 +94,19 @@ export default function ManageEventsPage() {
         throw new Error("Unable to get authentication token.");
       }
 
-      const response = await fetch(
-        `https://together-for-good-server.onrender.com/events/${id}`,
-        {
-          method: "DELETE",
-          headers: {
-            Authorization: `Bearer ${data.token}`,
-          },
-        }
-      );
+      const response = await fetch(`${API_URL}/events/${id}`, {
+        method: "DELETE",
+        headers: {
+          Authorization: `Bearer ${data.token}`,
+        },
+      });
 
       if (!response.ok) {
         const result = await response.json().catch(() => ({}));
-        throw new Error(result.message || "Failed to delete event.");
+
+        throw new Error(
+          result.message || "Failed to delete event."
+        );
       }
 
       setEvents((prev) =>
@@ -98,8 +114,12 @@ export default function ManageEventsPage() {
       );
 
       setSelectedEvent(null);
+
+      toast.success("Event deleted successfully!");
     } catch (err) {
-      setError(err.message || "Failed to delete event.");
+      toast.error(
+        err.message || "Failed to delete event. Please try again."
+      );
     } finally {
       setDeletingId(null);
     }
@@ -119,6 +139,7 @@ export default function ManageEventsPage() {
         <p className="text-slate-700 dark:text-slate-200">
           Please login to manage your events.
         </p>
+
         <Link
           href="/login"
           className="mt-4 inline-block text-emerald-700 dark:text-emerald-400"
@@ -137,6 +158,7 @@ export default function ManageEventsPage() {
             <h1 className="text-3xl font-bold text-slate-900 dark:text-white">
               Manage My Events
             </h1>
+
             <p className="mt-2 text-slate-500 dark:text-slate-300">
               View and manage the events you created.
             </p>
@@ -152,7 +174,10 @@ export default function ManageEventsPage() {
         </div>
 
         {error && (
-          <p role="alert" className="mb-6 text-sm text-red-600 dark:text-red-400">
+          <p
+            role="alert"
+            className="mb-6 text-sm text-red-600 dark:text-red-400"
+          >
             {error}
           </p>
         )}
@@ -162,6 +187,7 @@ export default function ManageEventsPage() {
             <p className="text-slate-600 dark:text-slate-300">
               You haven't created any events yet.
             </p>
+
             <Link
               href="/create-event"
               className="mt-4 inline-block font-semibold text-emerald-700 dark:text-emerald-400"
@@ -202,6 +228,7 @@ export default function ManageEventsPage() {
                   <div className="mt-4 space-y-2 text-sm text-slate-600 dark:text-slate-300">
                     <p className="flex items-start gap-2">
                       <MapPin className="mt-0.5 size-4 shrink-0 text-emerald-600 dark:text-emerald-400" />
+
                       <span className="min-w-0 break-words">
                         {event.location}
                       </span>
