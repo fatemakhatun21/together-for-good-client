@@ -1,59 +1,45 @@
 "use client";
 
-import { useState } from "react";
+import { Suspense, useState } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { authClient } from "@/lib/auth-client";
-
-export default function RegisterPage() {
+function LoginForm() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const callbackUrl = searchParams.get("callbackUrl");
+  const redirectTo =
+    callbackUrl?.startsWith("/") &&
+      !callbackUrl.startsWith("//") &&
+      !callbackUrl.startsWith("/\\")
+      ? callbackUrl
+      : "/";
 
   const [form, setForm] = useState({
-    name: "",
     email: "",
-    image: "",
     password: "",
   });
 
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
-  const handleChange = (e) => {
-    setForm({
-      ...form,
-      [e.target.name]: e.target.value,
-    });
-  };
-
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError("");
-
-    const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z]).{6,}$/;
-
-    if (!passwordRegex.test(form.password)) {
-      setError(
-        "Password must contain uppercase, lowercase and at least 6 characters."
-      );
-      return;
-    }
-
     setLoading(true);
 
     try {
-      const { error } = await authClient.signUp.email({
-        name: form.name,
+      const { error: loginError } = await authClient.signIn.email({
         email: form.email,
         password: form.password,
-        image: form.image || undefined,
       });
 
-      if (error) {
-        setError(error.message || "Registration failed.");
+      if (loginError) {
+        setError(loginError.message || "Login failed.");
         return;
       }
 
-      router.push("/");
+      router.replace(redirectTo);
       router.refresh();
     } catch {
       setError("Something went wrong. Please try again.");
@@ -61,54 +47,81 @@ export default function RegisterPage() {
       setLoading(false);
     }
   };
-  const handleGoogleLogin = async () => {
-    const { error } = await authClient.signIn.social({
-      provider: "google",
-      callbackURL: "/",
-    });
 
-    if (error) {
-      setError(error.message || "Google login failed.");
+  const handleGoogleLogin = async () => {
+    setError("");
+    setLoading(true);
+
+    try {
+      const { error: googleError } = await authClient.signIn.social({
+        provider: "google",
+        callbackURL: redirectTo,
+      });
+
+      if (googleError) {
+        setError(googleError.message || "Google login failed.");
+      }
+    } catch {
+      setError("Google login failed. Please try again.");
+    } finally {
+      setLoading(false);
     }
   };
   return (
     <main className="flex min-h-screen items-center justify-center bg-emerald-50/40 px-4 py-16">
       <div className="w-full max-w-md rounded-2xl bg-white p-8 shadow-sm">
         <h1 className="text-center text-3xl font-bold text-slate-900">
-          Create Account
+          Welcome Back
         </h1>
 
         <p className="mt-2 text-center text-slate-500">
-          Join the TogetherForGood community
+          Login to your TogetherForGood account
         </p>
 
         <form onSubmit={handleSubmit} className="mt-8 space-y-5">
-          {[
-            { name: "name", label: "Full Name", type: "text" },
-            { name: "email", label: "Email", type: "email" },
-            { name: "image", label: "Photo URL (Optional)", type: "url" },
-            { name: "password", label: "Password", type: "password" },
-          ].map((field) => (
-            <div key={field.name}>
-              <label
-                htmlFor={field.name}
-                className="mb-2 block text-sm font-medium text-slate-700"
-              >
-                {field.label}
-              </label>
+          <div>
+            <label
+              htmlFor="email"
+              className="mb-2 block text-sm font-medium text-slate-700"
+            >
+              Email
+            </label>
 
-              <input
-                id={field.name}
-                name={field.name}
-                type={field.type}
-                value={form[field.name]}
-                onChange={handleChange}
-                required={field.name !== "image"}
-                minLength={field.name === "password" ? 6 : undefined}
-                className="w-full rounded-xl border border-slate-200 px-4 py-3 outline-none focus:border-emerald-500"
-              />
-            </div>
-          ))}
+            <input
+              id="email"
+              type="email"
+              required
+              autoComplete="email"
+              value={form.email}
+              onChange={(e) =>
+                setForm({ ...form, email: e.target.value })
+              }
+              className="w-full rounded-xl border border-slate-200 px-4 py-3 outline-none focus:border-emerald-500"
+              placeholder="Enter your email"
+            />
+          </div>
+
+          <div>
+            <label
+              htmlFor="password"
+              className="mb-2 block text-sm font-medium text-slate-700"
+            >
+              Password
+            </label>
+
+            <input
+              id="password"
+              type="password"
+              required
+              autoComplete="current-password"
+              value={form.password}
+              onChange={(e) =>
+                setForm({ ...form, password: e.target.value })
+              }
+              className="w-full rounded-xl border border-slate-200 px-4 py-3 outline-none focus:border-emerald-500"
+              placeholder="Enter your password"
+            />
+          </div>
 
           {error && (
             <p role="alert" className="text-sm text-red-600">
@@ -119,31 +132,52 @@ export default function RegisterPage() {
           <button
             type="submit"
             disabled={loading}
-            className="w-full rounded-xl bg-emerald-600 py-3 font-semibold text-white hover:bg-emerald-700 disabled:opacity-60"
+            className="w-full rounded-xl bg-emerald-600 py-3 font-semibold text-white transition-colors hover:bg-emerald-700 disabled:opacity-60"
           >
-            {loading ? "Creating Account..." : "Register"}
+            {loading ? "Please wait..." : "Login"}
           </button>
         </form>
-        <div className="mt-5">
-          <button
-            type="button"
-            onClick={handleGoogleLogin}
-            className="flex w-full items-center justify-center gap-3 rounded-xl border border-slate-200 bg-white px-4 py-3 font-semibold text-slate-700 hover:bg-slate-50"
-          >
-            <span className="text-lg font-bold text-blue-600">G</span>
-            Continue with Google
-          </button>
+
+        <div className="my-6 flex items-center gap-3">
+          <div className="h-px flex-1 bg-slate-200" />
+          <span className="text-sm text-slate-400">OR</span>
+          <div className="h-px flex-1 bg-slate-200" />
         </div>
+
+        <button
+          type="button"
+          onClick={handleGoogleLogin}
+          disabled={loading}
+          className="flex w-full items-center justify-center gap-3 rounded-xl border border-slate-200 bg-white px-4 py-3 font-semibold text-slate-700 transition-colors hover:bg-slate-50 disabled:opacity-60"
+        >
+          <span className="text-lg font-bold text-blue-600">G</span>
+          Continue with Google
+        </button>
+
         <p className="mt-6 text-center text-sm text-slate-600">
-          Already have an account?{" "}
+          Don't have an account?{" "}
           <Link
-            href="/login"
+            href="/register"
             className="font-semibold text-emerald-700 hover:underline"
           >
-            Login
+            Register
           </Link>
         </p>
       </div>
     </main>
+  );
+}
+
+export default function LoginPage() {
+  return (
+    <Suspense
+      fallback={
+        <main className="min-h-screen py-24 text-center text-slate-500">
+          Loading login page...
+        </main>
+      }
+    >
+      <LoginForm />
+    </Suspense>
   );
 }
