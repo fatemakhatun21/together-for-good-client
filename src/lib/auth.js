@@ -1,7 +1,7 @@
 import dns from "node:dns";
 
 dns.setServers(["8.8.8.8", "1.1.1.1"]);
-
+import { jwt } from "better-auth/plugins";
 import { betterAuth } from "better-auth";
 import { MongoClient } from "mongodb";
 import { mongodbAdapter } from "@better-auth/mongo-adapter";
@@ -20,4 +20,5 @@ export const auth = betterAuth({
     emailAndPassword: {
         enabled: true,
     },
+    plugins: [jwt()],
 });

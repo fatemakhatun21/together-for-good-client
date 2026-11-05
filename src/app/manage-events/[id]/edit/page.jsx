@@ -27,8 +27,13 @@ export default function EditEventPage() {
 
     async function loadEvent() {
       try {
-        const response = await fetch(`http://localhost:5000/events/${id}`);
-        if (!response.ok) throw new Error("Failed to load event");
+        const response = await fetch(
+          `http://localhost:5000/events/${id}`
+        );
+
+        if (!response.ok) {
+          throw new Error("Failed to load event");
+        }
 
         const event = await response.json();
 
@@ -59,6 +64,11 @@ export default function EditEventPage() {
     e.preventDefault();
     setError("");
 
+    if (!form || !session?.user) {
+      setError("Please login first.");
+      return;
+    }
+
     if (form.eventDate <= today) {
       setError("Please select a future date.");
       return;
@@ -67,56 +77,107 @@ export default function EditEventPage() {
     setSaving(true);
 
     try {
-      const response = await fetch(`http://localhost:5000/events/${id}`, {
-        method: "PATCH",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(form),
-      });
+      const { data, error: tokenError } = await authClient.token();
 
-      if (!response.ok) throw new Error("Failed to update event");
+      if (tokenError || !data?.token) {
+        throw new Error("Unable to get authentication token");
+      }
+      const response = await fetch(`http://localhost:5000/events/${id}`,
+        {
+          method: "PATCH",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${data.token}`,
+          },
+          body: JSON.stringify(form),
+        }
+      );
+
+      if (!response.ok) {
+        const result = await response.json().catch(() => ({}));
+
+        throw new Error(
+          result.message || "Failed to update event"
+        );
+      }
 
       router.push("/manage-events");
       router.refresh();
-    } catch {
-      setError("Failed to update event. Please try again.");
+    } catch (err) {
+      setError(err.message || "Failed to update event.");
     } finally {
       setSaving(false);
     }
   };
 
   if (isPending || loading) {
-    return <p className="py-20 text-center">Loading event...</p>;
+    return (
+      <main className="min-h-screen py-20 text-center text-slate-500">
+        Loading event...
+      </main>
+    );
   }
 
   if (!session?.user) {
     return (
       <main className="min-h-screen py-20 text-center">
-        Please <Link href="/login" className="text-emerald-700">login</Link> first.
+        Please{" "}
+        <Link href="/login" className="text-emerald-700">
+          login
+        </Link>{" "}
+        first.
       </main>
     );
   }
 
   if (!form) {
-    return <p className="py-20 text-center text-red-600">{error}</p>;
+    return (
+      <main className="min-h-screen py-20 text-center text-red-600">
+        {error || "Event not found."}
+      </main>
+    );
   }
 
   return (
     <main className="min-h-screen bg-emerald-50/40 px-4 py-16">
       <div className="mx-auto max-w-2xl rounded-2xl bg-white p-6 shadow-sm sm:p-10">
-        <h1 className="text-3xl font-bold text-slate-900">Edit Event</h1>
+        <h1 className="text-3xl font-bold text-slate-900">
+          Edit Event
+        </h1>
 
         <form onSubmit={handleSubmit} className="mt-8 space-y-5">
           {[
-            { name: "title", label: "Event Title", type: "text" },
-            { name: "description", label: "Description", type: "textarea" },
-            { name: "image", label: "Thumbnail URL", type: "url" },
-            { name: "location", label: "Location", type: "text" },
-            { name: "eventDate", label: "Event Date", type: "date" },
+            {
+              name: "title",
+              label: "Event Title",
+              type: "text",
+            },
+            {
+              name: "description",
+              label: "Description",
+              type: "textarea",
+            },
+            {
+              name: "image",
+              label: "Thumbnail URL",
+              type: "url",
+            },
+            {
+              name: "location",
+              label: "Location",
+              type: "text",
+            },
+            {
+              name: "eventDate",
+              label: "Event Date",
+              type: "date",
+            },
           ].map((field) => (
             <div key={field.name}>
-              <label htmlFor={field.name} className="mb-2 block font-medium">
+              <label
+                htmlFor={field.name}
+                className="mb-2 block font-medium"
+              >
                 {field.label}
               </label>
 
@@ -127,7 +188,10 @@ export default function EditEventPage() {
                   rows={4}
                   value={form[field.name]}
                   onChange={(e) =>
-                    setForm({ ...form, [field.name]: e.target.value })
+                    setForm({
+                      ...form,
+                      [field.name]: e.target.value,
+                    })
                   }
                   className="w-full rounded-xl border border-slate-200 px-4 py-3"
                 />
@@ -139,7 +203,10 @@ export default function EditEventPage() {
                   min={field.type === "date" ? today : undefined}
                   value={form[field.name]}
                   onChange={(e) =>
-                    setForm({ ...form, [field.name]: e.target.value })
+                    setForm({
+                      ...form,
+                      [field.name]: e.target.value,
+                    })
                   }
                   className="w-full rounded-xl border border-slate-200 px-4 py-3"
                 />
@@ -148,14 +215,21 @@ export default function EditEventPage() {
           ))}
 
           <div>
-            <label htmlFor="eventType" className="mb-2 block font-medium">
+            <label
+              htmlFor="eventType"
+              className="mb-2 block font-medium"
+            >
               Event Type
             </label>
+
             <select
               id="eventType"
               value={form.eventType}
               onChange={(e) =>
-                setForm({ ...form, eventType: e.target.value })
+                setForm({
+                  ...form,
+                  eventType: e.target.value,
+                })
               }
               className="w-full rounded-xl border border-slate-200 px-4 py-3"
             >
@@ -167,7 +241,11 @@ export default function EditEventPage() {
             </select>
           </div>
 
-          {error && <p role="alert" className="text-sm text-red-600">{error}</p>}
+          {error && (
+            <p role="alert" className="text-sm text-red-600">
+              {error}
+            </p>
+          )}
 
           <button
             type="submit"
