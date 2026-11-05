@@ -31,7 +31,17 @@ export default function ManageEventsPage() {
 
     async function fetchEvents() {
       try {
-        const response = await fetch("http://localhost:5000/events");
+        const { data: tokenData, error: tokenError } = await authClient.token();
+
+        if (tokenError || !tokenData?.token) {
+          throw new Error("Authentication token unavailable");
+        }
+
+        const response = await fetch("http://localhost:5000/my-events", {
+          headers: {
+            Authorization: `Bearer ${tokenData.token}`,
+          },
+        });
 
         if (!response.ok) {
           throw new Error("Failed to load events");
@@ -39,11 +49,7 @@ export default function ManageEventsPage() {
 
         const data = await response.json();
 
-        const myEvents = data.filter(
-          (event) => event.creatorEmail === session.user.email
-        );
-
-        setEvents(myEvents);
+        setEvents(data);
       } catch {
         setError("Unable to load your events.");
       } finally {
