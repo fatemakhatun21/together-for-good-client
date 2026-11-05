@@ -16,16 +16,19 @@ export default function EventDetailsPage() {
     const router = useRouter();
 
     const { data: session, isPending } = authClient.useSession();
-
     const [event, setEvent] = useState(null);
     const [loading, setLoading] = useState(true);
+    const [error, setError] = useState("");
     const [joining, setJoining] = useState(false);
     const [joined, setJoined] = useState(false);
-    const [error, setError] = useState("");
+    const [checkingJoin, setCheckingJoin] = useState(true);
     const [joinMessage, setJoinMessage] = useState("");
+    const [joinError, setJoinError] = useState(false);
 
     useEffect(() => {
         if (!id) return;
+
+        let cancelled = false;
 
         async function fetchEvent() {
             try {
@@ -38,31 +41,111 @@ export default function EventDetailsPage() {
                 }
 
                 const data = await response.json();
-                setEvent(data);
+
+                if (!cancelled) {
+                    setEvent(data);
+                }
             } catch {
-                setError("Unable to load event details.");
+                if (!cancelled) {
+                    setError("Unable to load event details.");
+                }
             } finally {
-                setLoading(false);
+                if (!cancelled) {
+                    setLoading(false);
+                }
             }
         }
 
         fetchEvent();
+
+        return () => {
+            cancelled = true;
+        };
     }, [id]);
 
-    const handleJoin = async () => {
-        setJoinMessage("");
-
-        if (isPending) return;
+    useEffect(() => {
+        if (isPending || !id) return;
 
         if (!session?.user) {
-            router.push(`/login?callbackUrl=${encodeURIComponent(`/events/${id}`)}`);
+            setJoined(false);
+            setCheckingJoin(false);
+            return;
+        }
+
+        let cancelled = false;
+
+        async function checkJoinStatus() {
+            setCheckingJoin(true);
+            setJoinMessage("");
+            setJoinError(false);
+
+            try {
+                const { data, error: tokenError } =
+                    await authClient.token();
+
+                if (tokenError || !data?.token) {
+                    throw new Error("Authentication token unavailable");
+                }
+
+                const response = await fetch(
+                    `http://localhost:5000/join-events/${id}/status`,
+                    {
+                        headers: {
+                            Authorization: `Bearer ${data.token}`,
+                        },
+                    }
+                );
+
+                if (!response.ok) {
+                    throw new Error("Failed to check join status");
+                }
+
+                const result = await response.json();
+
+                if (!cancelled) {
+                    setJoined(Boolean(result.joined));
+                }
+            } catch {
+                if (!cancelled) {
+                    setJoinError(true);
+                    setJoinMessage("Unable to check join status.");
+                }
+            } finally {
+                if (!cancelled) {
+                    setCheckingJoin(false);
+                }
+            }
+        }
+
+        checkJoinStatus();
+
+        return () => {
+            cancelled = true;
+        };
+    }, [id, session?.user?.id, isPending]);
+
+    const handleJoin = async () => {
+        if (isPending || checkingJoin || joining || joined || joinError) {
+            return;
+        }
+
+        setJoinMessage("");
+        setJoinError(false);
+
+        if (!session?.user) {
+            const callbackUrl = `/events/${id}`;
+
+            router.push(
+                `/login?callbackUrl=${encodeURIComponent(callbackUrl)}`
+            );
             return;
         }
 
         setJoining(true);
 
         try {
-            const { data, error: tokenError } = await authClient.token();
+            const { data, error: tokenError } =
+                await authClient.token();
 
             if (tokenError || !data?.token) {
                 throw new Error("Unable to get authentication token.");
@@ -91,13 +174,18 @@ export default function EventDetailsPage() {
             }
 
             if (!response.ok) {
-                throw new Error(result.message || "Failed to join event.");
+                throw new Error(
+                    result.message || "Failed to join event."
+                );
             }
 
             setJoined(true);
             setJoinMessage("You have successfully joined this event!");
         } catch (err) {
-            setJoinMessage(err.message || "Something went wrong.");
+            setJoinError(true);
+            setJoinMessage(
+                err.message || "Something went wrong. Please try again."
+            );
         } finally {
             setJoining(false);
         }
@@ -128,7 +216,7 @@ export default function EventDetailsPage() {
         );
     }
 
-    const today = new Date().toLocaleDateString("en-CA");
+    const today = new Date().toISOString().slice(0, 10);
     const isPastEvent = event.eventDate <= today;
 
     return (
@@ -156,7 +244,6 @@ export default function EventDetailsPage() {
                             </div>
                         )}
                     </div>
-
                     <div className="p-6 sm:p-10">
                         <span className="inline-block rounded-full bg-emerald-50 px-4 py-2 text-sm font-semibold text-emerald-700">
                             {event.eventType}
@@ -191,28 +278,48 @@ export default function EventDetailsPage() {
                         <button
                             type="button"
                             onClick={handleJoin}
-                            disabled={joining || joined || isPastEvent || isPending}
+                            disabled={
+                                joining ||
+                                joined ||
+                                isPastEvent ||
+                                isPending ||
+                                checkingJoin ||
+                                joinError
+                            }
                             className="mt-10 inline-flex items-center gap-2 rounded-xl bg-emerald-600 px-7 py-3 font-semibold text-white transition-colors hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-60"
                         >
                             <HeartHandshake className="size-5" />
 
-                            {joining
-                                ? "Joining..."
-                                : joined
-                                    ? "Already Joined"
-                                    : isPastEvent
-                                        ? "Event Ended"
-                                        : "Join Event"}
+                            {checkingJoin || isPending
+                                ? "Checking..."
+                                : joining
+                                    ? "Joining..."
+                                    : joined
+                                        ? "Already Joined"
+                                        : isPastEvent
+                                            ? "Event Ended"
+                                            : "Join Event"}
                         </button>
 
                         {joinMessage && (
                             <p
-                                role="status"
-                                className={`mt-3 text-sm ${joined ? "text-emerald-700" : "text-red-600"
+                                role={joinError ? "alert" : "status"}
+                                className={`mt-3 text-sm ${joinError
+                                        ? "text-red-600"
+                                        : "text-emerald-700"
                                     }`}
                             >
                                 {joinMessage}
                             </p>
+                        )}
+                        {joinError && (
+                            <button
+                                type="button"
+                                onClick={() => window.location.reload()}
+                                className="mt-3 block text-sm font-semibold text-emerald-700 hover:underline"
+                            >
+                                Retry
+                            </button>
                         )}
                     </div>
                 </article>
