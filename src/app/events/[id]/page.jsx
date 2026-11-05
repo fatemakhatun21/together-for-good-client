@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useParams } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import {
     ArrowLeft,
@@ -9,13 +9,20 @@ import {
     MapPin,
     HeartHandshake,
 } from "lucide-react";
+import { authClient } from "@/lib/auth-client";
 
 export default function EventDetailsPage() {
     const { id } = useParams();
+    const router = useRouter();
+
+    const { data: session, isPending } = authClient.useSession();
 
     const [event, setEvent] = useState(null);
     const [loading, setLoading] = useState(true);
+    const [joining, setJoining] = useState(false);
+    const [joined, setJoined] = useState(false);
     const [error, setError] = useState("");
+    const [joinMessage, setJoinMessage] = useState("");
 
     useEffect(() => {
         if (!id) return;
@@ -32,7 +39,7 @@ export default function EventDetailsPage() {
 
                 const data = await response.json();
                 setEvent(data);
-            } catch (error) {
+            } catch {
                 setError("Unable to load event details.");
             } finally {
                 setLoading(false);
@@ -41,6 +48,60 @@ export default function EventDetailsPage() {
 
         fetchEvent();
     }, [id]);
+
+    const handleJoin = async () => {
+        setJoinMessage("");
+
+        if (isPending) return;
+
+        if (!session?.user) {
+            router.push(`/login?callbackUrl=${encodeURIComponent(`/events/${id}`)}`);
+            return;
+        }
+
+        setJoining(true);
+
+        try {
+            const { data, error: tokenError } = await authClient.token();
+
+            if (tokenError || !data?.token) {
+                throw new Error("Unable to get authentication token.");
+            }
+
+            const response = await fetch(
+                "http://localhost:5000/join-events",
+                {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                        Authorization: `Bearer ${data.token}`,
+                    },
+                    body: JSON.stringify({
+                        eventId: id,
+                    }),
+                }
+            );
+
+            const result = await response.json().catch(() => ({}));
+
+            if (response.status === 409) {
+                setJoined(true);
+                setJoinMessage("You have already joined this event.");
+                return;
+            }
+
+            if (!response.ok) {
+                throw new Error(result.message || "Failed to join event.");
+            }
+
+            setJoined(true);
+            setJoinMessage("You have successfully joined this event!");
+        } catch (err) {
+            setJoinMessage(err.message || "Something went wrong.");
+        } finally {
+            setJoining(false);
+        }
+    };
 
     if (loading) {
         return (
@@ -67,12 +128,15 @@ export default function EventDetailsPage() {
         );
     }
 
+    const today = new Date().toLocaleDateString("en-CA");
+    const isPastEvent = event.eventDate <= today;
+
     return (
         <main className="min-h-screen bg-emerald-50/40 px-5 py-12 sm:px-8 lg:py-16">
             <div className="mx-auto max-w-5xl">
                 <Link
                     href="/events"
-                    className="mb-8 inline-flex items-center gap-2 text-sm font-semibold text-emerald-700"
+                    className="mb-8 inline-flex items-center gap-2 text-sm font-semibold text-emerald-700 hover:text-emerald-800"
                 >
                     <ArrowLeft className="size-4" />
                     Back to Events
@@ -126,16 +190,30 @@ export default function EventDetailsPage() {
 
                         <button
                             type="button"
-                            disabled
-                            className="mt-10 inline-flex cursor-not-allowed items-center gap-2 rounded-xl bg-emerald-600 px-7 py-3 font-semibold text-white opacity-60"
+                            onClick={handleJoin}
+                            disabled={joining || joined || isPastEvent || isPending}
+                            className="mt-10 inline-flex items-center gap-2 rounded-xl bg-emerald-600 px-7 py-3 font-semibold text-white transition-colors hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-60"
                         >
                             <HeartHandshake className="size-5" />
-                            Join Event
+
+                            {joining
+                                ? "Joining..."
+                                : joined
+                                    ? "Already Joined"
+                                    : isPastEvent
+                                        ? "Event Ended"
+                                        : "Join Event"}
                         </button>
 
-                        <p className="mt-3 text-xs text-slate-500">
-                            Joining will be available after authentication is implemented.
-                        </p>
+                        {joinMessage && (
+                            <p
+                                role="status"
+                                className={`mt-3 text-sm ${joined ? "text-emerald-700" : "text-red-600"
+                                    }`}
+                            >
+                                {joinMessage}
+                            </p>
+                        )}
                     </div>
                 </article>
             </div>
