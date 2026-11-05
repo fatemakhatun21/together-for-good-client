@@ -41,10 +41,16 @@ export default function CreateEventPage() {
     setLoading(true);
 
     try {
+      const { data, error: tokenError } = await authClient.token();
+
+      if (tokenError || !data?.token) {
+        throw new Error("Unable to get authentication token");
+      }
       const response = await fetch("http://localhost:5000/events", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
+          Authorization: `Bearer ${data.token}`,
         },
         body: JSON.stringify({
           ...form,
