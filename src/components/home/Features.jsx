@@ -1,3 +1,4 @@
+import Link from "next/link";
 import {
   CalendarPlus,
   Users,
@@ -11,18 +12,21 @@ const features = [
     title: "Create Events",
     description:
       "Organize meaningful community events and bring people together to make a positive impact.",
+    href: "/create-event",
   },
   {
     icon: Users,
     title: "Join Communities",
     description:
       "Discover upcoming events, connect with volunteers, and participate in local initiatives.",
+    href: "/events",
   },
   {
     icon: HeartHandshake,
     title: "Make an Impact",
     description:
       "Contribute to social development through volunteering, donations, and community action.",
+    href: "/events",
   },
 ];
 
@@ -50,9 +54,11 @@ export default function Features() {
             const Icon = feature.icon;
 
             return (
-              <div
+              <Link
                 key={feature.title}
-                className="group flex h-full flex-col rounded-2xl border border-emerald-100 bg-white p-8 shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-xl dark:border-slate-700 dark:bg-slate-800 dark:hover:shadow-emerald-950/30"
+                href={feature.href}
+                aria-label={`${feature.title} - explore`}
+                className="group flex h-full flex-col rounded-2xl border border-emerald-100 bg-white p-8 shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-xl focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-emerald-500 dark:border-slate-700 dark:bg-slate-800 dark:hover:shadow-emerald-950/30"
               >
                 <div className="mb-6 flex size-14 items-center justify-center rounded-2xl bg-emerald-50 text-emerald-600 dark:bg-emerald-950 dark:text-emerald-400">
                   <Icon className="size-7" />
@@ -67,7 +73,7 @@ export default function Features() {
                 </p>
 
                 <ArrowUpRight className="mt-6 size-5 text-emerald-600 transition-transform group-hover:translate-x-1 group-hover:-translate-y-1 dark:text-emerald-400" />
-              </div>
+              </Link>
             );
           })}
         </div>
