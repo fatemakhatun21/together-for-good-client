@@ -7,7 +7,7 @@ import { MongoClient } from "mongodb";
 import { mongodbAdapter } from "@better-auth/mongo-adapter";
 
 const client = new MongoClient(process.env.MONGODB_URI, {
-  family: 4,
+    family: 4,
 });
 
 const db = client.db("together_for_good_db");
@@ -19,6 +19,12 @@ export const auth = betterAuth({
 
     emailAndPassword: {
         enabled: true,
+    },
+    socialProviders: {
+        google: {
+            clientId: process.env.GOOGLE_CLIENT_ID,
+            clientSecret: process.env.GOOGLE_CLIENT_SECRET,
+        },
     },
     plugins: [jwt()],
 });

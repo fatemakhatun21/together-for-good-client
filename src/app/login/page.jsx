@@ -61,7 +61,16 @@ export default function RegisterPage() {
       setLoading(false);
     }
   };
+  const handleGoogleLogin = async () => {
+    const { error } = await authClient.signIn.social({
+      provider: "google",
+      callbackURL: "/",
+    });
 
+    if (error) {
+      setError(error.message || "Google login failed.");
+    }
+  };
   return (
     <main className="flex min-h-screen items-center justify-center bg-emerald-50/40 px-4 py-16">
       <div className="w-full max-w-md rounded-2xl bg-white p-8 shadow-sm">
@@ -115,7 +124,16 @@ export default function RegisterPage() {
             {loading ? "Creating Account..." : "Register"}
           </button>
         </form>
-
+        <div className="mt-5">
+          <button
+            type="button"
+            onClick={handleGoogleLogin}
+            className="flex w-full items-center justify-center gap-3 rounded-xl border border-slate-200 bg-white px-4 py-3 font-semibold text-slate-700 hover:bg-slate-50"
+          >
+            <span className="text-lg font-bold text-blue-600">G</span>
+            Continue with Google
+          </button>
+        </div>
         <p className="mt-6 text-center text-sm text-slate-600">
           Already have an account?{" "}
           <Link
