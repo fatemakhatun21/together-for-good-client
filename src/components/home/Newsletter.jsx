@@ -1,11 +1,9 @@
-
 import { ArrowUpRight, Mail, Sparkles } from "lucide-react";
 
 export default function Newsletter() {
     return (
-        <section className="bg-white px-5 py-20 sm:px-8 lg:py-24">
-            <div className="relative mx-auto max-w-7xl overflow-hidden rounded-3xl bg-emerald-700 px-6 py-16 text-center sm:px-12 lg:py-20">
-
+        <section className="bg-white px-5 py-20 transition-colors sm:px-8 lg:py-24 dark:bg-slate-950">
+            <div className="relative mx-auto max-w-7xl overflow-hidden rounded-3xl bg-emerald-700 px-6 py-16 text-center sm:px-12 lg:py-20 dark:bg-emerald-900">
                 <div className="pointer-events-none absolute -left-24 -top-24 size-72 rounded-full bg-white/10 blur-3xl" />
                 <div className="pointer-events-none absolute -bottom-28 -right-20 size-80 rounded-full bg-emerald-400/20 blur-3xl" />
 
@@ -33,12 +31,12 @@ export default function Newsletter() {
                             type="email"
                             placeholder="Enter your email address"
                             aria-label="Email address"
-                            className="h-13 min-w-0 flex-1 rounded-xl border border-white/20 bg-white px-5 text-sm text-slate-900 outline-none placeholder:text-slate-400 focus:ring-2 focus:ring-emerald-300"
+                            className="h-13 min-w-0 flex-1 rounded-xl border border-white/20 bg-white px-5 text-sm text-slate-900 outline-none placeholder:text-slate-400 focus:ring-2 focus:ring-emerald-300 dark:border-emerald-700 dark:bg-slate-900 dark:text-white dark:placeholder:text-slate-400"
                         />
 
                         <button
                             type="button"
-                            className="inline-flex h-13 items-center justify-center gap-2 rounded-xl bg-slate-900 px-7 text-sm font-semibold text-white transition-colors hover:bg-slate-800"
+                            className="inline-flex h-13 items-center justify-center gap-2 rounded-xl bg-slate-900 px-7 text-sm font-semibold text-white transition-colors hover:bg-slate-800 dark:bg-emerald-400 dark:text-slate-950 dark:hover:bg-emerald-300"
                         >
                             Subscribe
                             <ArrowUpRight className="size-4" />

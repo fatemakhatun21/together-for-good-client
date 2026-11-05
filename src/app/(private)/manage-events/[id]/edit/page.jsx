@@ -82,7 +82,9 @@ export default function EditEventPage() {
       if (tokenError || !data?.token) {
         throw new Error("Unable to get authentication token");
       }
-      const response = await fetch(`https://together-for-good-server.onrender.com/events/${id}`,
+
+      const response = await fetch(
+        `https://together-for-good-server.onrender.com/events/${id}`,
         {
           method: "PATCH",
           headers: {
@@ -95,10 +97,7 @@ export default function EditEventPage() {
 
       if (!response.ok) {
         const result = await response.json().catch(() => ({}));
-
-        throw new Error(
-          result.message || "Failed to update event"
-        );
+        throw new Error(result.message || "Failed to update event");
       }
 
       router.push("/manage-events");
@@ -110,9 +109,15 @@ export default function EditEventPage() {
     }
   };
 
+  const inputClass =
+    "w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-slate-900 outline-none transition-colors placeholder:text-slate-400 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 dark:border-slate-600 dark:bg-slate-900 dark:text-white dark:placeholder:text-slate-500 dark:focus:border-emerald-400 dark:focus:ring-emerald-400/20";
+
+  const labelClass =
+    "mb-2 block font-medium text-slate-700 dark:text-slate-200";
+
   if (isPending || loading) {
     return (
-      <main className="min-h-screen py-20 text-center text-slate-500">
+      <main className="min-h-screen bg-emerald-50/40 py-20 text-center text-slate-500 dark:bg-slate-900 dark:text-slate-400">
         Loading event...
       </main>
     );
@@ -120,9 +125,12 @@ export default function EditEventPage() {
 
   if (!session?.user) {
     return (
-      <main className="min-h-screen py-20 text-center">
+      <main className="min-h-screen bg-emerald-50/40 py-20 text-center text-slate-700 dark:bg-slate-900 dark:text-slate-200">
         Please{" "}
-        <Link href="/login" className="text-emerald-700">
+        <Link
+          href="/login"
+          className="font-semibold text-emerald-700 hover:underline dark:text-emerald-400"
+        >
           login
         </Link>{" "}
         first.
@@ -132,52 +140,29 @@ export default function EditEventPage() {
 
   if (!form) {
     return (
-      <main className="min-h-screen py-20 text-center text-red-600">
+      <main className="min-h-screen bg-emerald-50/40 py-20 text-center text-red-600 dark:bg-slate-900 dark:text-red-400">
         {error || "Event not found."}
       </main>
     );
   }
 
   return (
-    <main className="min-h-screen bg-emerald-50/40 px-4 py-16">
-      <div className="mx-auto max-w-2xl rounded-2xl bg-white p-6 shadow-sm sm:p-10">
-        <h1 className="text-3xl font-bold text-slate-900">
+    <main className="min-h-screen bg-emerald-50/40 px-4 py-16 transition-colors dark:bg-slate-900">
+      <div className="mx-auto max-w-2xl rounded-2xl border border-slate-100 bg-white p-6 shadow-sm transition-colors sm:p-10 dark:border-slate-700 dark:bg-slate-800">
+        <h1 className="text-3xl font-bold text-slate-900 dark:text-white">
           Edit Event
         </h1>
 
         <form onSubmit={handleSubmit} className="mt-8 space-y-5">
           {[
-            {
-              name: "title",
-              label: "Event Title",
-              type: "text",
-            },
-            {
-              name: "description",
-              label: "Description",
-              type: "textarea",
-            },
-            {
-              name: "image",
-              label: "Thumbnail URL",
-              type: "url",
-            },
-            {
-              name: "location",
-              label: "Location",
-              type: "text",
-            },
-            {
-              name: "eventDate",
-              label: "Event Date",
-              type: "date",
-            },
+            { name: "title", label: "Event Title", type: "text" },
+            { name: "description", label: "Description", type: "textarea" },
+            { name: "image", label: "Thumbnail URL", type: "url" },
+            { name: "location", label: "Location", type: "text" },
+            { name: "eventDate", label: "Event Date", type: "date" },
           ].map((field) => (
             <div key={field.name}>
-              <label
-                htmlFor={field.name}
-                className="mb-2 block font-medium"
-              >
+              <label htmlFor={field.name} className={labelClass}>
                 {field.label}
               </label>
 
@@ -193,7 +178,7 @@ export default function EditEventPage() {
                       [field.name]: e.target.value,
                     })
                   }
-                  className="w-full rounded-xl border border-slate-200 px-4 py-3"
+                  className={inputClass}
                 />
               ) : (
                 <input
@@ -208,17 +193,15 @@ export default function EditEventPage() {
                       [field.name]: e.target.value,
                     })
                   }
-                  className="w-full rounded-xl border border-slate-200 px-4 py-3"
+                  className={`${inputClass} ${field.type === "date" ? "dark:[color-scheme:dark]" : ""
+                    }`}
                 />
               )}
             </div>
           ))}
 
           <div>
-            <label
-              htmlFor="eventType"
-              className="mb-2 block font-medium"
-            >
+            <label htmlFor="eventType" className={labelClass}>
               Event Type
             </label>
 
@@ -231,7 +214,7 @@ export default function EditEventPage() {
                   eventType: e.target.value,
                 })
               }
-              className="w-full rounded-xl border border-slate-200 px-4 py-3"
+              className={inputClass}
             >
               <option value="Plantation">Plantation</option>
               <option value="Cleanup">Cleanup</option>
@@ -242,7 +225,10 @@ export default function EditEventPage() {
           </div>
 
           {error && (
-            <p role="alert" className="text-sm text-red-600">
+            <p
+              role="alert"
+              className="text-sm text-red-600 dark:text-red-400"
+            >
               {error}
             </p>
           )}
@@ -250,7 +236,7 @@ export default function EditEventPage() {
           <button
             type="submit"
             disabled={saving}
-            className="w-full rounded-xl bg-emerald-600 py-3 font-semibold text-white hover:bg-emerald-700 disabled:opacity-60"
+            className="w-full rounded-xl bg-emerald-600 py-3 font-semibold text-white transition-colors hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-60 dark:hover:bg-emerald-500"
           >
             {saving ? "Updating..." : "Update Event"}
           </button>

@@ -11,14 +11,18 @@ import {
 } from "lucide-react";
 import { authClient } from "@/lib/auth-client";
 
+const API_URL = "https://together-for-good-server.onrender.com";
+
 export default function EventDetailsPage() {
     const { id } = useParams();
     const router = useRouter();
 
     const { data: session, isPending } = authClient.useSession();
+
     const [event, setEvent] = useState(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState("");
+
     const [joining, setJoining] = useState(false);
     const [joined, setJoined] = useState(false);
     const [checkingJoin, setCheckingJoin] = useState(true);
@@ -32,9 +36,7 @@ export default function EventDetailsPage() {
 
         async function fetchEvent() {
             try {
-                const response = await fetch(
-                    `https://together-for-good-server.onrender.com/events/${id}`
-                );
+                const response = await fetch(`${API_URL}/events/${id}`);
 
                 if (!response.ok) {
                     throw new Error("Failed to fetch event");
@@ -88,7 +90,7 @@ export default function EventDetailsPage() {
                 }
 
                 const response = await fetch(
-                    `https://together-for-good-server.onrender.com/join-events/${id}/status`,
+                    `${API_URL}/join-events/${id}/status`,
                     {
                         headers: {
                             Authorization: `Bearer ${data.token}`,
@@ -125,7 +127,13 @@ export default function EventDetailsPage() {
     }, [id, session?.user?.id, isPending]);
 
     const handleJoin = async () => {
-        if (isPending || checkingJoin || joining || joined || joinError) {
+        if (
+            isPending ||
+            checkingJoin ||
+            joining ||
+            joined ||
+            joinError
+        ) {
             return;
         }
 
@@ -151,19 +159,16 @@ export default function EventDetailsPage() {
                 throw new Error("Unable to get authentication token.");
             }
 
-            const response = await fetch(
-                "https://together-for-good-server.onrender.com/join-events",
-                {
-                    method: "POST",
-                    headers: {
-                        "Content-Type": "application/json",
-                        Authorization: `Bearer ${data.token}`,
-                    },
-                    body: JSON.stringify({
-                        eventId: id,
-                    }),
-                }
-            );
+            const response = await fetch(`${API_URL}/join-events`, {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    Authorization: `Bearer ${data.token}`,
+                },
+                body: JSON.stringify({
+                    eventId: id,
+                }),
+            });
 
             const result = await response.json().catch(() => ({}));
 
@@ -174,9 +179,7 @@ export default function EventDetailsPage() {
             }
 
             if (!response.ok) {
-                throw new Error(
-                    result.message || "Failed to join event."
-                );
+                throw new Error(result.message || "Failed to join event.");
             }
 
             setJoined(true);
@@ -193,7 +196,7 @@ export default function EventDetailsPage() {
 
     if (loading) {
         return (
-            <main className="min-h-screen py-24 text-center text-slate-500">
+            <main className="min-h-screen bg-emerald-50/40 px-5 py-24 text-center text-slate-500 dark:bg-slate-900 dark:text-slate-400">
                 Loading event details...
             </main>
         );
@@ -201,14 +204,14 @@ export default function EventDetailsPage() {
 
     if (error || !event) {
         return (
-            <main className="min-h-screen py-24 text-center">
-                <p className="text-red-600">
+            <main className="min-h-screen bg-emerald-50/40 px-5 py-24 text-center dark:bg-slate-900">
+                <p className="text-red-600 dark:text-red-400">
                     {error || "Event not found."}
                 </p>
 
                 <Link
                     href="/events"
-                    className="mt-4 inline-block text-emerald-700"
+                    className="mt-4 inline-block text-emerald-700 hover:underline dark:text-emerald-400"
                 >
                     Back to Events
                 </Link>
@@ -220,18 +223,18 @@ export default function EventDetailsPage() {
     const isPastEvent = event.eventDate <= today;
 
     return (
-        <main className="min-h-screen bg-emerald-50/40 px-5 py-12 sm:px-8 lg:py-16">
+        <main className="min-h-screen bg-emerald-50/40 px-5 py-12 transition-colors sm:px-8 lg:py-16 dark:bg-slate-900">
             <div className="mx-auto max-w-5xl">
                 <Link
                     href="/events"
-                    className="mb-8 inline-flex items-center gap-2 text-sm font-semibold text-emerald-700 hover:text-emerald-800"
+                    className="mb-8 inline-flex items-center gap-2 text-sm font-semibold text-emerald-700 hover:text-emerald-800 dark:text-emerald-400 dark:hover:text-emerald-300"
                 >
                     <ArrowLeft className="size-4" />
                     Back to Events
                 </Link>
 
-                <article className="overflow-hidden rounded-3xl border border-slate-100 bg-white shadow-sm">
-                    <div className="h-64 bg-slate-100 sm:h-96">
+                <article className="overflow-hidden rounded-3xl border border-slate-100 bg-white shadow-sm transition-colors dark:border-slate-700 dark:bg-slate-800">
+                    <div className="h-64 bg-slate-100 sm:h-96 dark:bg-slate-700">
                         {event.image ? (
                             <img
                                 src={event.image}
@@ -239,39 +242,42 @@ export default function EventDetailsPage() {
                                 className="h-full w-full object-cover"
                             />
                         ) : (
-                            <div className="flex h-full items-center justify-center text-slate-400">
+                            <div className="flex h-full items-center justify-center text-slate-400 dark:text-slate-300">
                                 No image available
                             </div>
                         )}
                     </div>
+
                     <div className="p-6 sm:p-10">
-                        <span className="inline-block rounded-full bg-emerald-50 px-4 py-2 text-sm font-semibold text-emerald-700">
+                        <span className="inline-block rounded-full bg-emerald-50 px-4 py-2 text-sm font-semibold text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300">
                             {event.eventType}
                         </span>
 
-                        <h1 className="mt-5 text-3xl font-bold text-slate-900 sm:text-4xl">
+                        <h1 className="mt-5 text-3xl font-bold text-slate-900 sm:text-4xl dark:text-white">
                             {event.title}
                         </h1>
 
-                        <div className="mt-6 flex flex-wrap gap-6 text-sm text-slate-600">
+                        <div className="mt-6 flex flex-wrap gap-6 text-sm text-slate-600 dark:text-slate-300">
                             <p className="flex items-center gap-2">
-                                <CalendarDays className="size-5 text-emerald-600" />
+                                <CalendarDays className="size-5 shrink-0 text-emerald-600 dark:text-emerald-400" />
                                 {event.eventDate}
                             </p>
 
-                            <p className="flex items-center gap-2">
-                                <MapPin className="size-5 text-emerald-600" />
-                                {event.location}
+                            <p className="flex min-w-0 items-start gap-2">
+                                <MapPin className="mt-0.5 size-5 shrink-0 text-emerald-600 dark:text-emerald-400" />
+                                <span className="break-words">
+                                    {event.location}
+                                </span>
                             </p>
                         </div>
 
-                        <div className="my-8 border-t border-slate-100" />
+                        <div className="my-8 border-t border-slate-100 dark:border-slate-700" />
 
-                        <h2 className="text-xl font-bold text-slate-900">
+                        <h2 className="text-xl font-bold text-slate-900 dark:text-white">
                             About This Event
                         </h2>
 
-                        <p className="mt-4 whitespace-pre-line leading-8 text-slate-600">
+                        <p className="mt-4 whitespace-pre-line leading-8 text-slate-600 dark:text-slate-300">
                             {event.description}
                         </p>
 
@@ -286,7 +292,7 @@ export default function EventDetailsPage() {
                                 checkingJoin ||
                                 joinError
                             }
-                            className="mt-10 inline-flex items-center gap-2 rounded-xl bg-emerald-600 px-7 py-3 font-semibold text-white transition-colors hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-60"
+                            className="mt-10 inline-flex items-center gap-2 rounded-xl bg-emerald-600 px-7 py-3 font-semibold text-white transition-colors hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-60 dark:bg-emerald-600 dark:hover:bg-emerald-500"
                         >
                             <HeartHandshake className="size-5" />
 
@@ -305,18 +311,19 @@ export default function EventDetailsPage() {
                             <p
                                 role={joinError ? "alert" : "status"}
                                 className={`mt-3 text-sm ${joinError
-                                        ? "text-red-600"
-                                        : "text-emerald-700"
+                                        ? "text-red-600 dark:text-red-400"
+                                        : "text-emerald-700 dark:text-emerald-400"
                                     }`}
                             >
                                 {joinMessage}
                             </p>
                         )}
+
                         {joinError && (
                             <button
                                 type="button"
                                 onClick={() => window.location.reload()}
-                                className="mt-3 block text-sm font-semibold text-emerald-700 hover:underline"
+                                className="mt-3 block text-sm font-semibold text-emerald-700 hover:underline dark:text-emerald-400"
                             >
                                 Retry
                             </button>

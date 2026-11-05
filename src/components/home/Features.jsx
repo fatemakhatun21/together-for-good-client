@@ -1,4 +1,3 @@
-
 import {
   CalendarPlus,
   Users,
@@ -29,18 +28,18 @@ const features = [
 
 export default function Features() {
   return (
-    <section className="bg-emerald-50/40 px-5 py-20 sm:px-8 lg:py-24">
+    <section className="bg-emerald-50/40 px-5 py-20 transition-colors sm:px-8 lg:py-24 dark:bg-slate-900">
       <div className="mx-auto max-w-7xl">
         <div className="mx-auto mb-12 max-w-2xl text-center">
-          <span className="text-sm font-semibold uppercase tracking-widest text-emerald-600">
+          <span className="text-sm font-semibold uppercase tracking-widest text-emerald-600 dark:text-emerald-400">
             What We Offer
           </span>
 
-          <h2 className="mt-4 text-3xl font-bold tracking-tight text-slate-900 sm:text-4xl">
+          <h2 className="mt-4 text-3xl font-bold tracking-tight text-slate-900 sm:text-4xl dark:text-white">
             Together, We Create Change
           </h2>
 
-          <p className="mt-5 text-base leading-7 text-slate-600">
+          <p className="mt-5 text-base leading-7 text-slate-600 dark:text-slate-300">
             Everything you need to connect with your community,
             support meaningful causes, and make a lasting difference.
           </p>
@@ -53,21 +52,21 @@ export default function Features() {
             return (
               <div
                 key={feature.title}
-                className="group flex h-full flex-col rounded-2xl border border-emerald-100 bg-white p-8 shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-xl"
+                className="group flex h-full flex-col rounded-2xl border border-emerald-100 bg-white p-8 shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-xl dark:border-slate-700 dark:bg-slate-800 dark:hover:shadow-emerald-950/30"
               >
-                <div className="mb-6 flex size-14 items-center justify-center rounded-2xl bg-emerald-50 text-emerald-600">
+                <div className="mb-6 flex size-14 items-center justify-center rounded-2xl bg-emerald-50 text-emerald-600 dark:bg-emerald-950 dark:text-emerald-400">
                   <Icon className="size-7" />
                 </div>
 
-                <h3 className="text-xl font-bold text-slate-900">
+                <h3 className="text-xl font-bold text-slate-900 dark:text-white">
                   {feature.title}
                 </h3>
 
-                <p className="mt-4 flex-1 text-sm leading-7 text-slate-600">
+                <p className="mt-4 flex-1 text-sm leading-7 text-slate-600 dark:text-slate-300">
                   {feature.description}
                 </p>
 
-                <ArrowUpRight className="mt-6 size-5 text-emerald-600 transition-transform group-hover:translate-x-1 group-hover:-translate-y-1" />
+                <ArrowUpRight className="mt-6 size-5 text-emerald-600 transition-transform group-hover:translate-x-1 group-hover:-translate-y-1 dark:text-emerald-400" />
               </div>
             );
           })}

@@ -1,4 +1,3 @@
-
 import Image from "next/image";
 
 const galleryImages = [
@@ -30,18 +29,18 @@ const galleryImages = [
 
 export default function Gallery() {
     return (
-        <section className="bg-white px-5 py-20 sm:px-8 lg:py-24">
+        <section className="bg-white px-5 py-20 transition-colors sm:px-8 lg:py-24 dark:bg-slate-950">
             <div className="mx-auto max-w-7xl">
                 <div className="mx-auto mb-12 max-w-2xl text-center">
-                    <span className="text-sm font-semibold uppercase tracking-widest text-emerald-600">
+                    <span className="text-sm font-semibold uppercase tracking-widest text-emerald-600 dark:text-emerald-400">
                         Our Community
                     </span>
 
-                    <h2 className="mt-4 text-3xl font-bold tracking-tight text-slate-900 sm:text-4xl">
+                    <h2 className="mt-4 text-3xl font-bold tracking-tight text-slate-900 sm:text-4xl dark:text-white">
                         Moments That Make a Difference
                     </h2>
 
-                    <p className="mt-5 text-base leading-7 text-slate-600">
+                    <p className="mt-5 text-base leading-7 text-slate-600 dark:text-slate-300">
                         Discover inspiring moments of kindness, teamwork,
                         and positive change in our communities.
                     </p>
@@ -51,7 +50,7 @@ export default function Gallery() {
                     {galleryImages.map((image) => (
                         <div
                             key={image.src}
-                            className="group relative aspect-[4/3] overflow-hidden rounded-2xl bg-slate-100"
+                            className="group relative aspect-[4/3] overflow-hidden rounded-2xl bg-slate-100 dark:bg-slate-800"
                         >
                             <Image
                                 src={image.src}

@@ -46,17 +46,21 @@ export default function CreateEventPage() {
       if (tokenError || !data?.token) {
         throw new Error("Unable to get authentication token");
       }
-      const response = await fetch("https://together-for-good-server.onrender.com/events", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${data.token}`,
-        },
-        body: JSON.stringify({
-          ...form,
-          creatorEmail: session.user.email,
-        }),
-      });
+
+      const response = await fetch(
+        "https://together-for-good-server.onrender.com/events",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${data.token}`,
+          },
+          body: JSON.stringify({
+            ...form,
+            creatorEmail: session.user.email,
+          }),
+        }
+      );
 
       if (!response.ok) {
         throw new Error("Failed to create event");
@@ -71,15 +75,31 @@ export default function CreateEventPage() {
     }
   };
 
+  const inputClass =
+    "w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-slate-900 outline-none transition-colors placeholder:text-slate-400 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 dark:border-slate-600 dark:bg-slate-900 dark:text-white dark:placeholder:text-slate-500 dark:focus:border-emerald-400 dark:focus:ring-emerald-400/20";
+
+  const labelClass =
+    "mb-2 block font-medium text-slate-700 dark:text-slate-200";
+
   if (isPending) {
-    return <p className="py-20 text-center">Loading...</p>;
+    return (
+      <main className="min-h-screen bg-emerald-50/40 py-20 text-center text-slate-600 dark:bg-slate-900 dark:text-slate-300">
+        Loading...
+      </main>
+    );
   }
 
   if (!session?.user) {
     return (
-      <main className="min-h-screen py-20 text-center">
-        <p>Please login to create an event.</p>
-        <Link href="/login" className="mt-4 inline-block text-emerald-700">
+      <main className="min-h-screen bg-emerald-50/40 py-20 text-center dark:bg-slate-900">
+        <p className="text-slate-700 dark:text-slate-200">
+          Please login to create an event.
+        </p>
+
+        <Link
+          href="/login"
+          className="mt-4 inline-block font-semibold text-emerald-700 hover:underline dark:text-emerald-400"
+        >
           Login
         </Link>
       </main>
@@ -87,35 +107,37 @@ export default function CreateEventPage() {
   }
 
   return (
-    <main className="min-h-screen bg-emerald-50/40 px-4 py-16">
-      <div className="mx-auto max-w-2xl rounded-2xl bg-white p-6 shadow-sm sm:p-10">
-        <h1 className="text-3xl font-bold text-slate-900">
+    <main className="min-h-screen bg-emerald-50/40 px-4 py-16 transition-colors dark:bg-slate-900">
+      <div className="mx-auto max-w-2xl rounded-2xl border border-slate-100 bg-white p-6 shadow-sm transition-colors sm:p-10 dark:border-slate-700 dark:bg-slate-800">
+        <h1 className="text-3xl font-bold text-slate-900 dark:text-white">
           Create Event
         </h1>
 
-        <p className="mt-2 text-slate-500">
+        <p className="mt-2 text-slate-500 dark:text-slate-300">
           Organize an event and make a difference.
         </p>
 
         <form onSubmit={handleSubmit} className="mt-8 space-y-5">
           <div>
-            <label htmlFor="title" className="mb-2 block font-medium">
+            <label htmlFor="title" className={labelClass}>
               Event Title
             </label>
+
             <input
               id="title"
               name="title"
               required
               value={form.title}
               onChange={handleChange}
-              className="w-full rounded-xl border border-slate-200 px-4 py-3"
+              className={inputClass}
             />
           </div>
 
           <div>
-            <label htmlFor="description" className="mb-2 block font-medium">
+            <label htmlFor="description" className={labelClass}>
               Description
             </label>
+
             <textarea
               id="description"
               name="description"
@@ -123,20 +145,21 @@ export default function CreateEventPage() {
               rows={4}
               value={form.description}
               onChange={handleChange}
-              className="w-full rounded-xl border border-slate-200 px-4 py-3"
+              className={inputClass}
             />
           </div>
 
           <div>
-            <label htmlFor="eventType" className="mb-2 block font-medium">
+            <label htmlFor="eventType" className={labelClass}>
               Event Type
             </label>
+
             <select
               id="eventType"
               name="eventType"
               value={form.eventType}
               onChange={handleChange}
-              className="w-full rounded-xl border border-slate-200 px-4 py-3"
+              className={inputClass}
             >
               <option value="Plantation">Plantation</option>
               <option value="Cleanup">Cleanup</option>
@@ -147,9 +170,10 @@ export default function CreateEventPage() {
           </div>
 
           <div>
-            <label htmlFor="image" className="mb-2 block font-medium">
+            <label htmlFor="image" className={labelClass}>
               Thumbnail Image URL
             </label>
+
             <input
               id="image"
               name="image"
@@ -158,28 +182,30 @@ export default function CreateEventPage() {
               value={form.image}
               onChange={handleChange}
               placeholder="https://example.com/image.jpg"
-              className="w-full rounded-xl border border-slate-200 px-4 py-3"
+              className={inputClass}
             />
           </div>
 
           <div>
-            <label htmlFor="location" className="mb-2 block font-medium">
+            <label htmlFor="location" className={labelClass}>
               Event Location
             </label>
+
             <input
               id="location"
               name="location"
               required
               value={form.location}
               onChange={handleChange}
-              className="w-full rounded-xl border border-slate-200 px-4 py-3"
+              className={inputClass}
             />
           </div>
 
           <div>
-            <label htmlFor="eventDate" className="mb-2 block font-medium">
+            <label htmlFor="eventDate" className={labelClass}>
               Event Date
             </label>
+
             <input
               id="eventDate"
               name="eventDate"
@@ -188,24 +214,28 @@ export default function CreateEventPage() {
               min={today}
               value={form.eventDate}
               onChange={handleChange}
-              className="w-full rounded-xl border border-slate-200 px-4 py-3"
+              className={`${inputClass} dark:[color-scheme:dark]`}
             />
           </div>
 
           <div>
-            <label htmlFor="creatorEmail" className="mb-2 block font-medium">
+            <label htmlFor="creatorEmail" className={labelClass}>
               Creator Email
             </label>
+
             <input
               id="creatorEmail"
               value={session.user.email}
               readOnly
-              className="w-full rounded-xl border border-slate-200 bg-slate-100 px-4 py-3 text-slate-500"
+              className="w-full rounded-xl border border-slate-200 bg-slate-100 px-4 py-3 text-slate-500 dark:border-slate-600 dark:bg-slate-700 dark:text-slate-300"
             />
           </div>
 
           {message && (
-            <p role="alert" className="text-sm text-red-600">
+            <p
+              role="alert"
+              className="text-sm text-red-600 dark:text-red-400"
+            >
               {message}
             </p>
           )}
@@ -213,7 +243,7 @@ export default function CreateEventPage() {
           <button
             type="submit"
             disabled={loading}
-            className="w-full rounded-xl bg-emerald-600 py-3 font-semibold text-white hover:bg-emerald-700 disabled:opacity-60"
+            className="w-full rounded-xl bg-emerald-600 py-3 font-semibold text-white transition-colors hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-60 dark:hover:bg-emerald-500"
           >
             {loading ? "Creating Event..." : "Create Event"}
           </button>

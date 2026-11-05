@@ -41,15 +41,15 @@ export default function RegisterPage() {
     setLoading(true);
 
     try {
-      const { error } = await authClient.signUp.email({
+      const { error: signupError } = await authClient.signUp.email({
         name: form.name,
         email: form.email,
         password: form.password,
         image: form.image || undefined,
       });
 
-      if (error) {
-        setError(error.message || "Registration failed.");
+      if (signupError) {
+        setError(signupError.message || "Registration failed.");
         return;
       }
 
@@ -61,24 +61,38 @@ export default function RegisterPage() {
       setLoading(false);
     }
   };
-  const handleGoogleLogin = async () => {
-    const { error } = await authClient.signIn.social({
-      provider: "google",
-      callbackURL: "/",
-    });
 
-    if (error) {
-      setError(error.message || "Google registration failed.");
+  const handleGoogleLogin = async () => {
+    setError("");
+    setLoading(true);
+
+    try {
+      const { error: googleError } = await authClient.signIn.social({
+        provider: "google",
+        callbackURL: "/",
+      });
+
+      if (googleError) {
+        setError(googleError.message || "Google registration failed.");
+      }
+    } catch {
+      setError("Google registration failed. Please try again.");
+    } finally {
+      setLoading(false);
     }
   };
+
+  const inputClass =
+    "w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-slate-900 outline-none transition-colors placeholder:text-slate-400 focus:border-emerald-500 dark:border-slate-600 dark:bg-slate-900 dark:text-white dark:placeholder:text-slate-500 dark:focus:border-emerald-400";
+
   return (
-    <main className="flex min-h-screen items-center justify-center bg-emerald-50/40 px-4 py-16">
-      <div className="w-full max-w-md rounded-2xl bg-white p-8 shadow-sm">
-        <h1 className="text-center text-3xl font-bold text-slate-900">
+    <main className="flex min-h-screen items-center justify-center bg-emerald-50/40 px-4 py-16 transition-colors dark:bg-slate-900">
+      <div className="w-full max-w-md rounded-2xl border border-slate-100 bg-white p-8 shadow-sm transition-colors dark:border-slate-700 dark:bg-slate-800">
+        <h1 className="text-center text-3xl font-bold text-slate-900 dark:text-white">
           Create Account
         </h1>
 
-        <p className="mt-2 text-center text-slate-500">
+        <p className="mt-2 text-center text-slate-500 dark:text-slate-300">
           Join the TogetherForGood community
         </p>
 
@@ -92,7 +106,7 @@ export default function RegisterPage() {
             <div key={field.name}>
               <label
                 htmlFor={field.name}
-                className="mb-2 block text-sm font-medium text-slate-700"
+                className="mb-2 block text-sm font-medium text-slate-700 dark:text-slate-200"
               >
                 {field.label}
               </label>
@@ -105,13 +119,25 @@ export default function RegisterPage() {
                 onChange={handleChange}
                 required={field.name !== "image"}
                 minLength={field.name === "password" ? 6 : undefined}
-                className="w-full rounded-xl border border-slate-200 px-4 py-3 outline-none focus:border-emerald-500"
+                autoComplete={
+                  field.name === "name"
+                    ? "name"
+                    : field.name === "email"
+                      ? "email"
+                      : field.name === "password"
+                        ? "new-password"
+                        : undefined
+                }
+                className={inputClass}
               />
             </div>
           ))}
 
           {error && (
-            <p role="alert" className="text-sm text-red-600">
+            <p
+              role="alert"
+              className="text-sm text-red-600 dark:text-red-400"
+            >
               {error}
             </p>
           )}
@@ -119,7 +145,7 @@ export default function RegisterPage() {
           <button
             type="submit"
             disabled={loading}
-            className="w-full rounded-xl bg-emerald-600 py-3 font-semibold text-white hover:bg-emerald-700 disabled:opacity-60"
+            className="w-full rounded-xl bg-emerald-600 py-3 font-semibold text-white transition-colors hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-60 dark:hover:bg-emerald-500"
           >
             {loading ? "Creating Account..." : "Register"}
           </button>
@@ -128,17 +154,20 @@ export default function RegisterPage() {
         <button
           type="button"
           onClick={handleGoogleLogin}
-          className="mt-5 flex w-full items-center justify-center gap-3 rounded-xl border border-slate-200 bg-white px-4 py-3 font-semibold text-slate-700 hover:bg-slate-50"
+          disabled={loading}
+          className="mt-5 flex w-full items-center justify-center gap-3 rounded-xl border border-slate-200 bg-white px-4 py-3 font-semibold text-slate-700 transition-colors hover:bg-slate-50 disabled:opacity-60 dark:border-slate-600 dark:bg-slate-900 dark:text-white dark:hover:bg-slate-700"
         >
-          <span className="text-lg font-bold text-blue-600">G</span>
+          <span className="text-lg font-bold text-blue-600 dark:text-blue-400">
+            G
+          </span>
           Continue with Google
         </button>
-        
-        <p className="mt-6 text-center text-sm text-slate-600">
+
+        <p className="mt-6 text-center text-sm text-slate-600 dark:text-slate-300">
           Already have an account?{" "}
           <Link
-            href="/sign-in"
-            className="font-semibold text-emerald-700"
+            href="/login"
+            className="font-semibold text-emerald-700 hover:underline dark:text-emerald-400"
           >
             Login
           </Link>
