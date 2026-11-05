@@ -1,0 +1,183 @@
+"use client";
+
+import { useEffect, useState } from "react";
+import Link from "next/link";
+import { useParams, useRouter } from "next/navigation";
+import { authClient } from "@/lib/auth-client";
+
+export default function EditEventPage() {
+  const { id } = useParams();
+  const router = useRouter();
+  const { data: session, isPending } = authClient.useSession();
+
+  const [form, setForm] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState("");
+
+  const today = new Date().toLocaleDateString("en-CA");
+
+  useEffect(() => {
+    if (isPending) return;
+
+    if (!session?.user) {
+      setLoading(false);
+      return;
+    }
+
+    async function loadEvent() {
+      try {
+        const response = await fetch(`http://localhost:5000/events/${id}`);
+        if (!response.ok) throw new Error("Failed to load event");
+
+        const event = await response.json();
+
+        if (event.creatorEmail !== session.user.email) {
+          setError("You can only edit your own events.");
+          return;
+        }
+
+        setForm({
+          title: event.title || "",
+          description: event.description || "",
+          eventType: event.eventType || "Plantation",
+          image: event.image || "",
+          location: event.location || "",
+          eventDate: event.eventDate || "",
+        });
+      } catch {
+        setError("Unable to load event.");
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    loadEvent();
+  }, [id, session?.user?.email, isPending]);
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setError("");
+
+    if (form.eventDate <= today) {
+      setError("Please select a future date.");
+      return;
+    }
+
+    setSaving(true);
+
+    try {
+      const response = await fetch(`http://localhost:5000/events/${id}`, {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(form),
+      });
+
+      if (!response.ok) throw new Error("Failed to update event");
+
+      router.push("/manage-events");
+      router.refresh();
+    } catch {
+      setError("Failed to update event. Please try again.");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  if (isPending || loading) {
+    return <p className="py-20 text-center">Loading event...</p>;
+  }
+
+  if (!session?.user) {
+    return (
+      <main className="min-h-screen py-20 text-center">
+        Please <Link href="/login" className="text-emerald-700">login</Link> first.
+      </main>
+    );
+  }
+
+  if (!form) {
+    return <p className="py-20 text-center text-red-600">{error}</p>;
+  }
+
+  return (
+    <main className="min-h-screen bg-emerald-50/40 px-4 py-16">
+      <div className="mx-auto max-w-2xl rounded-2xl bg-white p-6 shadow-sm sm:p-10">
+        <h1 className="text-3xl font-bold text-slate-900">Edit Event</h1>
+
+        <form onSubmit={handleSubmit} className="mt-8 space-y-5">
+          {[
+            { name: "title", label: "Event Title", type: "text" },
+            { name: "description", label: "Description", type: "textarea" },
+            { name: "image", label: "Thumbnail URL", type: "url" },
+            { name: "location", label: "Location", type: "text" },
+            { name: "eventDate", label: "Event Date", type: "date" },
+          ].map((field) => (
+            <div key={field.name}>
+              <label htmlFor={field.name} className="mb-2 block font-medium">
+                {field.label}
+              </label>
+
+              {field.type === "textarea" ? (
+                <textarea
+                  id={field.name}
+                  required
+                  rows={4}
+                  value={form[field.name]}
+                  onChange={(e) =>
+                    setForm({ ...form, [field.name]: e.target.value })
+                  }
+                  className="w-full rounded-xl border border-slate-200 px-4 py-3"
+                />
+              ) : (
+                <input
+                  id={field.name}
+                  type={field.type}
+                  required
+                  min={field.type === "date" ? today : undefined}
+                  value={form[field.name]}
+                  onChange={(e) =>
+                    setForm({ ...form, [field.name]: e.target.value })
+                  }
+                  className="w-full rounded-xl border border-slate-200 px-4 py-3"
+                />
+              )}
+            </div>
+          ))}
+
+          <div>
+            <label htmlFor="eventType" className="mb-2 block font-medium">
+              Event Type
+            </label>
+            <select
+              id="eventType"
+              value={form.eventType}
+              onChange={(e) =>
+                setForm({ ...form, eventType: e.target.value })
+              }
+              className="w-full rounded-xl border border-slate-200 px-4 py-3"
+            >
+              <option value="Plantation">Plantation</option>
+              <option value="Cleanup">Cleanup</option>
+              <option value="Donation">Donation</option>
+              <option value="Awareness">Awareness</option>
+              <option value="Other">Other</option>
+            </select>
+          </div>
+
+          {error && <p role="alert" className="text-sm text-red-600">{error}</p>}
+
+          <button
+            type="submit"
+            disabled={saving}
+            className="w-full rounded-xl bg-emerald-600 py-3 font-semibold text-white hover:bg-emerald-700 disabled:opacity-60"
+          >
+            {saving ? "Updating..." : "Update Event"}
+          </button>
+        </form>
+      </div>
+    </main>
+  );
+}
