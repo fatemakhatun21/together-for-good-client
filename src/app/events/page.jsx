@@ -12,7 +12,7 @@ export default function UpcomingEventsPage() {
   useEffect(() => {
     async function loadEvents() {
       try {
-        const response = await fetch("http://localhost:5000/upcoming-events");
+        const response = await fetch("https://together-for-good-server.onrender.com/upcoming-events");
 
         if (!response.ok) {
           throw new Error("Failed to fetch upcoming events");

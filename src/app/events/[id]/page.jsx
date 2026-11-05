@@ -33,7 +33,7 @@ export default function EventDetailsPage() {
         async function fetchEvent() {
             try {
                 const response = await fetch(
-                    `http://localhost:5000/events/${id}`
+                    `https://together-for-good-server.onrender.com/events/${id}`
                 );
 
                 if (!response.ok) {
@@ -88,7 +88,7 @@ export default function EventDetailsPage() {
                 }
 
                 const response = await fetch(
-                    `http://localhost:5000/join-events/${id}/status`,
+                    `https://together-for-good-server.onrender.com/join-events/${id}/status`,
                     {
                         headers: {
                             Authorization: `Bearer ${data.token}`,
@@ -152,7 +152,7 @@ export default function EventDetailsPage() {
             }
 
             const response = await fetch(
-                "http://localhost:5000/join-events",
+                "https://together-for-good-server.onrender.com/join-events",
                 {
                     method: "POST",
                     headers: {

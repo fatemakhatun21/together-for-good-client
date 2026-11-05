@@ -46,7 +46,7 @@ export default function CreateEventPage() {
       if (tokenError || !data?.token) {
         throw new Error("Unable to get authentication token");
       }
-      const response = await fetch("http://localhost:5000/events", {
+      const response = await fetch("https://together-for-good-server.onrender.com/events", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

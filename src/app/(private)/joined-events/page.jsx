@@ -39,7 +39,7 @@ export default function JoinedEventsPage() {
         }
 
         const response = await fetch(
-          "http://localhost:5000/joined-events",
+          "https://together-for-good-server.onrender.com/joined-events",
           {
             headers: {
               Authorization: `Bearer ${data.token}`,

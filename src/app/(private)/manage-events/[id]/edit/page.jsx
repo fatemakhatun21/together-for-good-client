@@ -28,7 +28,7 @@ export default function EditEventPage() {
     async function loadEvent() {
       try {
         const response = await fetch(
-          `http://localhost:5000/events/${id}`
+          `https://together-for-good-server.onrender.com/events/${id}`
         );
 
         if (!response.ok) {
@@ -82,7 +82,7 @@ export default function EditEventPage() {
       if (tokenError || !data?.token) {
         throw new Error("Unable to get authentication token");
       }
-      const response = await fetch(`http://localhost:5000/events/${id}`,
+      const response = await fetch(`https://together-for-good-server.onrender.com/events/${id}`,
         {
           method: "PATCH",
           headers: {

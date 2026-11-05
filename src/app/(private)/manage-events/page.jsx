@@ -37,7 +37,7 @@ export default function ManageEventsPage() {
           throw new Error("Authentication token unavailable");
         }
 
-        const response = await fetch("http://localhost:5000/my-events", {
+        const response = await fetch("https://together-for-good-server.onrender.com/my-events", {
           headers: {
             Authorization: `Bearer ${tokenData.token}`,
           },
@@ -75,7 +75,7 @@ export default function ManageEventsPage() {
       }
 
       const response = await fetch(
-        `http://localhost:5000/events/${id}`,
+        `https://together-for-good-server.onrender.com/events/${id}`,
         {
           method: "DELETE",
           headers: {
