@@ -2,17 +2,24 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
-import { CalendarDays, MapPin, Pencil, Trash2, Plus } from "lucide-react";
+import {
+  CalendarDays,
+  MapPin,
+  Pencil,
+  Trash2,
+  Plus,
+  AlertTriangle,
+} from "lucide-react";
 import { authClient } from "@/lib/auth-client";
 
 export default function ManageEventsPage() {
-  const router = useRouter();
   const { data: session, isPending } = authClient.useSession();
 
   const [events, setEvents] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [deletingId, setDeletingId] = useState(null);
+  const [selectedEvent, setSelectedEvent] = useState(null);
 
   useEffect(() => {
     if (isPending) return;
@@ -47,6 +54,47 @@ export default function ManageEventsPage() {
     fetchEvents();
   }, [session?.user?.email, isPending]);
 
+  const handleDelete = async () => {
+    if (!selectedEvent || deletingId) return;
+
+    const id = selectedEvent._id;
+    setDeletingId(id);
+    setError("");
+
+    try {
+      const { data, error: tokenError } = await authClient.token();
+
+      if (tokenError || !data?.token) {
+        throw new Error("Unable to get authentication token.");
+      }
+
+      const response = await fetch(
+        `http://localhost:5000/events/${id}`,
+        {
+          method: "DELETE",
+          headers: {
+            Authorization: `Bearer ${data.token}`,
+          },
+        }
+      );
+
+      if (!response.ok) {
+        const result = await response.json().catch(() => ({}));
+        throw new Error(result.message || "Failed to delete event.");
+      }
+
+      setEvents((prev) =>
+        prev.filter((event) => event._id !== id)
+      );
+
+      setSelectedEvent(null);
+    } catch (err) {
+      setError(err.message || "Failed to delete event.");
+    } finally {
+      setDeletingId(null);
+    }
+  };
+
   if (isPending || loading) {
     return (
       <main className="min-h-screen py-20 text-center text-slate-500">
@@ -59,7 +107,10 @@ export default function ManageEventsPage() {
     return (
       <main className="min-h-screen py-20 text-center">
         <p>Please login to manage your events.</p>
-        <Link href="/login" className="mt-4 inline-block text-emerald-700">
+        <Link
+          href="/login"
+          className="mt-4 inline-block text-emerald-700"
+        >
           Login
         </Link>
       </main>
@@ -88,9 +139,13 @@ export default function ManageEventsPage() {
           </Link>
         </div>
 
-        {error ? (
-          <p role="alert" className="text-red-600">{error}</p>
-        ) : events.length === 0 ? (
+        {error && (
+          <p role="alert" className="mb-6 text-sm text-red-600">
+            {error}
+          </p>
+        )}
+
+        {events.length === 0 ? (
           <div className="rounded-2xl bg-white p-12 text-center shadow-sm">
             <p className="text-slate-600">
               You haven't created any events yet.
@@ -110,12 +165,16 @@ export default function ManageEventsPage() {
                 className="overflow-hidden rounded-2xl bg-white shadow-sm"
               >
                 <div className="h-48 bg-slate-100">
-                  {event.image && (
+                  {event.image ? (
                     <img
                       src={event.image}
                       alt={event.title}
                       className="h-full w-full object-cover"
                     />
+                  ) : (
+                    <div className="flex h-full items-center justify-center text-slate-400">
+                      No image available
+                    </div>
                   )}
                 </div>
 
@@ -150,9 +209,8 @@ export default function ManageEventsPage() {
 
                     <button
                       type="button"
-                      disabled
-                      title="Delete functionality will be added after API security"
-                      className="inline-flex flex-1 cursor-not-allowed items-center justify-center gap-2 rounded-xl border border-red-200 px-4 py-2.5 text-sm font-semibold text-red-600 opacity-50"
+                      onClick={() => setSelectedEvent(event)}
+                      className="inline-flex flex-1 items-center justify-center gap-2 rounded-xl border border-red-200 px-4 py-2.5 text-sm font-semibold text-red-600 hover:bg-red-50"
                     >
                       <Trash2 className="size-4" />
                       Delete
@@ -164,6 +222,54 @@ export default function ManageEventsPage() {
           </div>
         )}
       </div>
+
+      {selectedEvent && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 px-4">
+          <div
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="delete-event-title"
+            className="w-full max-w-md rounded-2xl bg-white p-7 shadow-2xl"
+          >
+            <div className="mb-5 flex size-14 items-center justify-center rounded-full bg-red-50">
+              <AlertTriangle className="size-7 text-red-600" />
+            </div>
+
+            <h2
+              id="delete-event-title"
+              className="text-xl font-bold text-slate-900"
+            >
+              Delete Event?
+            </h2>
+
+            <p className="mt-3 text-sm leading-6 text-slate-600">
+              Are you sure you want to delete{" "}
+              <strong>{selectedEvent.title}</strong>? This action
+              cannot be undone.
+            </p>
+
+            <div className="mt-7 flex justify-end gap-3">
+              <button
+                type="button"
+                disabled={Boolean(deletingId)}
+                onClick={() => setSelectedEvent(null)}
+                className="rounded-xl border border-slate-200 px-5 py-2.5 text-sm font-semibold text-slate-700 hover:bg-slate-50 disabled:opacity-50"
+              >
+                Cancel
+              </button>
+
+              <button
+                type="button"
+                disabled={Boolean(deletingId)}
+                onClick={handleDelete}
+                className="rounded-xl bg-red-600 px-5 py-2.5 text-sm font-semibold text-white hover:bg-red-700 disabled:opacity-50"
+              >
+                {deletingId ? "Deleting..." : "Yes, Delete"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </main>
   );
 }
